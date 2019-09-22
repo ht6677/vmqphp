@@ -1,6 +1,7 @@
 <?php
 namespace app\admin\controller;
 
+use think\App;
 use think\Db;
 use think\facade\Session;
 use app\service\QrcodeServer;
@@ -58,6 +59,15 @@ class Index
             ->where("state >=1")
             ->sum("price");
 
+        $v = Db::query("SELECT VERSION();");
+        $v=$v[0]['VERSION()'];
+
+        if(function_exists("gd_info")) {
+            $gd_info = @gd_info();
+            $gd = $gd_info["GD Version"];
+        }else{
+            $gd = '<font color="red">GD库未开启！</font>';
+        }
 
         return json($this->getReturn(1,"成功",array(
             "todayOrder"=>$todayOrder,
@@ -66,8 +76,45 @@ class Index
             "todayMoney"=>round($todayMoney,2),
             "countOrder"=>$countOrder,
             "countMoney"=>round($countMoney),
+
+            "PHP_VERSION"=>PHP_VERSION,
+            "PHP_OS"=>PHP_OS,
+            "SERVER"=>$_SERVER ['SERVER_SOFTWARE'],
+            "MySql"=>$v,
+            "Thinkphp"=>"v".App::VERSION,
+            "RunTime"=>$this->sys_uptime(),
+            "ver"=>"v".config("ver"),
+            "gd"=>$gd,
         )));
 
+    }
+    private function sys_uptime() {
+        $output='';
+        if (false === ($str = @file("/proc/uptime"))) return false;
+        $str = explode(" ", implode("", $str));
+        $str = trim($str[0]);
+        $min = $str / 60;
+        $hours = $min / 60;
+        $days = floor($hours / 24);
+        $hours = floor($hours - ($days * 24));
+        $min = floor($min - ($days * 60 * 24) - ($hours * 60));
+        if ($days !== 0) $output .= $days."天";
+        if ($hours !== 0) $output .= $hours."小时";
+        if ($min !== 0) $output .= $min."分钟";
+        return $output;
+    }
+    public function checkUpdate(){
+        if (!Session::has("admin")){
+            return json($this->getReturn(-1,"没有登录"));
+        }
+        $ver = $this->getCurl("https://raw.githubusercontent.com/szvone/vmqphp/master/ver");
+        $ver = explode("|",$ver);
+
+        if (sizeof($ver)==2 && $ver[0]!=config("ver")){
+            return json($this->getReturn(1,"[v".$ver[0]."已于".$ver[1]."发布]","https://github.com/szvone/vmqphp"));
+        }else{
+            return json($this->getReturn(0,"程序是最新版"));
+        }
     }
 
     public function getSettings(){
@@ -86,7 +133,12 @@ class Index
         $payQf = Db::name("setting")->where("vkey","payQf")->find();
         $wxpay = Db::name("setting")->where("vkey","wxpay")->find();
         $zfbpay = Db::name("setting")->where("vkey","zfbpay")->find();
-
+        if ($key['vvalue']==""){
+            $key['vvalue'] = md5(time());
+            Db::name("setting")->where("vkey","key")->update(array(
+                "vvalue"=>$key['vvalue']
+            ));
+        }
 
         return json($this->getReturn(1,"成功",array(
             "user"=>$user['vvalue'],
@@ -329,7 +381,7 @@ class Index
         $klsf[] = 'Accept-Language:zh-cn';
         //$klsf[] = 'Content-Type:application/json';
         $klsf[] = 'User-Agent:Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_1 like Mac OS X) AppleWebKit/604.4.7 (KHTML, like Gecko) Mobile/15C153 MicroMessenger/6.6.1 NetType/WIFI Language/zh_CN';
-        $klsf[] = 'Referer:https://servicewechat.com/wx7c8d593b2c3a7703/5/page-frame.html';
+        $klsf[] = 'Referer:'.$url;
         curl_setopt($ch, CURLOPT_HTTPHEADER, $klsf);
         if ($post) {
             curl_setopt($ch, CURLOPT_POST, 1);

@@ -8,7 +8,10 @@ class Index
 {
     public function index()
     {
-        return 'by:vone';
+        $url = "http://www.5cctv.net/wp-content/plugins/erphpdown/payment/vmq/notify.php?payId=190717101020112222981&param=order[7876632]&type=1&price=1&reallyPrice=1&sign=2398a2492db0616381a85c1fedc51a11";
+        return $this->getCurl($url);
+
+        //return 'by:vone';
     }
 
     public function getReturn($code = 1, $msg = "成功", $data = null)
@@ -415,10 +418,10 @@ class Index
             return json($this->getReturn(-1, "签名校验不通过"));
         }
 
-        $jg = time()*1000 - $t;
-        if ($jg>50000 || $jg<-50000){
-            return json($this->getReturn(-1, "客户端时间错误"));
-        }
+//        $jg = time()*1000 - $t;
+//        if ($jg>50000 || $jg<-50000){
+//            return json($this->getReturn(-1, "客户端时间错误"));
+//        }
 
         Db::name("setting")->where("vkey","lastheart")->update(array("vvalue"=>time()));
         Db::name("setting")->where("vkey","jkstate")->update(array("vvalue"=>1));
@@ -440,10 +443,10 @@ class Index
             return json($this->getReturn(-1, "签名校验不通过"));
         }
 
-        $jg = time()*1000 - $t;
-        if ($jg>50000 || $jg<-50000){
-            return json($this->getReturn(-1, "客户端时间错误"));
-        }
+//        $jg = time()*1000 - $t;
+//        if ($jg>50000 || $jg<-50000){
+//            return json($this->getReturn(-1, "客户端时间错误"));
+//        }
 
         Db::name("setting")
             ->where("vkey","lastpay")
@@ -576,7 +579,7 @@ class Index
 
 
     //发送Http请求
-    function getCurl($url, $post = 0, $cookie = 0, $header = 0, $nobaody = 0)
+    private function getCurl($url, $post = 0, $cookie = 0, $header = 0, $nobaody = 0)
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -586,7 +589,7 @@ class Index
         $klsf[] = 'Accept-Language:zh-cn';
         //$klsf[] = 'Content-Type:application/json';
         $klsf[] = 'User-Agent:Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_1 like Mac OS X) AppleWebKit/604.4.7 (KHTML, like Gecko) Mobile/15C153 MicroMessenger/6.6.1 NetType/WIFI Language/zh_CN';
-        $klsf[] = 'Referer:https://servicewechat.com/wx7c8d593b2c3a7703/5/page-frame.html';
+        $klsf[] = 'Referer:'.$url;
         curl_setopt($ch, CURLOPT_HTTPHEADER, $klsf);
         if ($post) {
             curl_setopt($ch, CURLOPT_POST, 1);
